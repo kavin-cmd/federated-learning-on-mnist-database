@@ -1,0 +1,1 @@
+This project is inspired from the towards federated learning with byzantine client weighting project , and We aim to have an implementation on a different database for the course of the capstone project
