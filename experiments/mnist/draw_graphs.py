@@ -95,5 +95,3 @@ if __name__ == '__main__':
     experiment, seed, cpr, attack_type, real_alpha = vars(args).values()
     
     plot_all(experiment, seed, cpr, attack_type, real_alpha)
-
-

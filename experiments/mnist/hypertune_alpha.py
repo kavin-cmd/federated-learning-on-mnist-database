@@ -1,60 +1,48 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+import mnist 
 import tensorflow as tf
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.keras.optimizers import Adam
-from kerastuner.tuners import Hyperband
-
 
 # Load the MNIST dataset
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
 # Preprocess the data
-x_train = x_train.astype('float32') / 255.0
-x_test = x_test.astype('float32') / 255.0
-x_train = x_train.reshape(x_train.shape[0], 784)
-x_test = x_test.reshape(x_test.shape[0], 784)
+x_train = x_train.reshape(-1, 28 * 28) / 255.0
+x_test = x_test.reshape(-1, 28 * 28) / 255.0
+y_train = np.eye(10)[y_train]
+y_test = np.eye(10)[y_test]
 
-# Model-building function for hyperparameter tuning
-def build_model(hp):
-    model = Sequential()
-    model.add(Flatten(input_shape=(784,)))
-    model.add(Dense(128, activation='relu'))
-    model.add(Dense(10, activation='softmax'))
+# Split the training data into training and validation sets
+x_train_split, x_val, y_train_split, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
 
-    # Tune the alpha parameter (learning rate) using Hyperband
-    hp_alpha = hp.Float('alpha', min_value=0.0001, max_value=0.1, sampling='LOG')
+# Define the hyperparameters to tune
+param_grid = {
+    'n_estimators': [10, 50, 100, 200],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
 
-    model.compile(optimizer=Adam(learning_rate=hp_alpha),
-                  loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+# Create a RandomForestClassifier
+rf = RandomForestClassifier()
 
-    return model
+# Use GridSearchCV to find the best hyperparameters
+grid_search = GridSearchCV(rf, param_grid, cv=5)
+grid_search.fit(x_train_split, y_train_split)
 
-# Create the Hyperband tuner
-tuner = Hyperband(
-    build_model,
-    objective='val_accuracy',
-    max_epochs=10,
-    factor=3,
-    directory='hyperband_tuning',
-    project_name='mnist_alpha_tuning'
-)
+# Train the model on the entire training set with the best hyperparameters
+best_rf = grid_search.best_estimator_
+best_rf.fit(x_train, y_train)
 
-# Search for the best hyperparameters
-tuner.search(x_train, y_train, epochs=10, validation_data=(x_test, y_test))
+# Evaluate the model on the validation set
+y_pred = best_rf.predict(x_val)
+accuracy = accuracy_score(y_val, y_pred)
+print(f"Validation accuracy: {accuracy}")
 
-# Get the best hyperparameters
-best_hyperparameters = tuner.get_best_hyperparameters(num_trials=1)[0]
-
-# Create the model with the best hyperparameters
-best_model = tuner.hypermodel.build(best_hyperparameters)
-
-# Train the model
-best_model.fit(x_train, y_train, epochs=10)
-
-# Print the best hyperparameters
-print(f"Learning Rate (alpha): {best_hyperparameters.get('alpha')}")
-
-# Evaluate the model
-evaluation = best_model.evaluate(x_test, y_test)
-print("Test accuracy:", evaluation[1])
+# Evaluate the model on the test set
+y_pred = best_rf.predict(x_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Test accuracy: {accuracy}")

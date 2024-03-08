@@ -50,5 +50,3 @@ class Client():
       return [-t for t in delta_weights]
     else:
       return delta_weights
-
-

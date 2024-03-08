@@ -1,0 +1,7 @@
+{
+  "partition_config": {
+    "#clients": 100,
+    "mu": 1.5,
+    "sigma": 3.45
+  }
+}

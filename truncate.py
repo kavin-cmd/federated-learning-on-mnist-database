@@ -2,7 +2,6 @@ from itertools import islice
 from math import ceil, isclose, floor
 import numpy as np
 
-
 def find_alpha(U, N, alpha_star=0.5, sort_N=False):
     if sort_N:
         N = sorted(N, reverse=True)
@@ -113,3 +112,4 @@ def find_U_alpha_pairs_2(N, alpha_star=0.5):
         f -= 1
         alpha = f / K
     return res
+

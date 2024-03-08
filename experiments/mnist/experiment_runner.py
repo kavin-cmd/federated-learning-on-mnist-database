@@ -19,7 +19,6 @@ import experiments.mnist.mnist as mnist
 from experiments.mnist.client import Client
 from experiments.mnist.server import Server
 
-
 def fs_setup(experiment_name, seed, config):
   root_dir = pathlib.Path(f'experiments') / experiment_name
   config_path = root_dir / 'config.json'
